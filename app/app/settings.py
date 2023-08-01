@@ -147,6 +147,9 @@ AUTH_USER_MODEL = 'core.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'user.auth.PersonalAccessTokenAuthentication',
+    ]
 }
 
 """This is for uploading an image via the browsable api"""

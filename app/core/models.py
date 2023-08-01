@@ -53,6 +53,64 @@ class User(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
 
 
+class PersonalAccessTokenManager(models.Manager):
+
+    def generateToken(self):
+        """Generate 32 byte token"""
+        return get_random_string(32)
+
+    def generateTokenHash(self, token_string):
+        """Hash token to store in DataBase"""
+        return make_password(token_string)
+
+    def create(self, user, name, **extra_fields):
+        """Create Personal Access Token"""
+        if not name:
+            raise ValueError('Name is required')
+
+        token_string = self.generateToken()
+        token_hash = self.generateTokenHash(token_string)
+        PAT = self.model(user=user,
+                         name=name,
+                         token_hash=token_hash,
+                         **extra_fields)
+
+        PAT.save(using=self.db)
+
+        return token_string, PAT
+
+    def checkExpiration(self, token):
+        """Check to make sure the token is not expired"""
+        if token.expires is None:
+            return True
+        elif token.expires > date.today():
+            return True
+        else:
+            token.is_expired = True
+            token.save()
+            return False
+
+
+class PersonalAccessToken(models.Model):
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+    )
+    token = models.CharField(max_length=88)
+    name = models.CharField(max_length=50)
+    created = models.DateField(auto_now=False, auto_now_add=True)
+    expires = models.DateField(auto_now=False, auto_now_add=False, null=True)
+    revoked = models.BooleanField(default=False)
+    is_expired = models.BooleanField(default=False)
+
+
+    objects = PersonalAccessTokenManager()
+
+    def __str__(self):
+        return self.name
+
+
 class Recipe(models.Model):
 
     user = models.ForeignKey(
