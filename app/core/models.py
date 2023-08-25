@@ -8,6 +8,12 @@ from django.contrib.auth.models import (
     BaseUserManager,
     PermissionsMixin
 )
+
+from django.utils.crypto import get_random_string
+from django.contrib.auth.hashers import make_password
+
+from datetime import date
+
 import uuid
 import os
 
@@ -72,7 +78,7 @@ class PersonalAccessTokenManager(models.Manager):
         token_hash = self.generateTokenHash(token_string)
         PAT = self.model(user=user,
                          name=name,
-                         token_hash=token_hash,
+                         token=token_hash,
                          **extra_fields)
 
         PAT.save(using=self.db)
